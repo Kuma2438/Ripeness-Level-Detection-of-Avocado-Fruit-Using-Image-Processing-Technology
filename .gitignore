@@ -1,9 +1,6 @@
-# Ignore root items
-/*
-
-# Unignore /program directory and its files
-!/program/
-!/program/**
-
-# Unignore .gitignore
-!/.gitignore
+__pycache__/
+*.pyc
+*.pyo
+.vscode/
+.idea/
+snapshots/
