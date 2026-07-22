@@ -1,6 +1,9 @@
-__pycache__/
-*.pyc
-*.pyo
-.vscode/
-.idea/
-snapshots/
+# Ignore everything by default
+*
+
+# Allow the program directory and its contents
+!program/
+!program/**
+
+# Allow .gitignore itself
+!.gitignore
