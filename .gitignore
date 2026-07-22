@@ -1,9 +1,9 @@
-# Ignore everything by default
-*
+# Ignore root items
+/*
 
-# Allow the program directory and its contents
-!program/
-!program/**
+# Unignore /program directory and its files
+!/program/
+!/program/**
 
-# Allow .gitignore itself
-!.gitignore
+# Unignore .gitignore
+!/.gitignore
