@@ -10,6 +10,7 @@ from avocado_classifier import AvocadoClassifier
 from gauge_widget import GaugeWidget
 from camera_manager import DualCameraManager
 from generate_dataset import generate_sample_dataset
+from trainer_gui import TrainerLabelerStudio
 
 # CustomTkinter Configuration
 ctk.set_appearance_mode("Dark")
@@ -19,21 +20,24 @@ class AvocadoApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("🥑 ระบบตรวจวัดระดับความสุกของอะโวคาโดเรียลไทม์ (Dual Camera Avocado Ripeness Inspector)")
-        self.geometry("1280x760")
-        self.minsize(1024, 680)
+        self.title("🥑 ระบบตรวจวัดระดับความสุกและสายพันธุ์อะโวคาโด (Dual Camera Avocado Inspector)")
+        self.geometry("1320x780")
+        self.minsize(1080, 700)
 
         # Dataset initialization
         self.dataset_dir = r"d:\Project\program\dataset"
+        self.variety_dir = r"d:\Project\dataset\varieties"
+        
         if not os.path.exists(self.dataset_dir):
             generate_sample_dataset(self.dataset_dir)
 
         # ML Engine & Dual Camera Manager
-        self.classifier = AvocadoClassifier(self.dataset_dir)
+        self.classifier = AvocadoClassifier(dataset_dir=self.dataset_dir, variety_dir=self.variety_dir)
         self.cam_manager = DualCameraManager(self.dataset_dir)
         
         self.view_mode = "split" # "split", "cam1", "cam2"
         self.is_running = True
+        self.trainer_win = None
 
         self.build_ui()
         self.update_loop()
@@ -45,7 +49,7 @@ class AvocadoApp(ctk.CTk):
 
         title_label = ctk.CTkLabel(
             header_frame, 
-            text="🥑 ระบบตรวจวัดและวิเคราะห์ระดับความสุกของผลอะโวคาโด (Dual Camera Avocado Ripeness System)",
+            text="🥑 ระบบตรวจวัดระดับความสุกและจำแนกสายพันธุ์อะโวคาโด (Real-Time Avocado Inspector)",
             font=ctk.CTkFont(family="Helvetica", size=20, weight="bold"),
             text_color="#2ecc71"
         )
@@ -53,7 +57,7 @@ class AvocadoApp(ctk.CTk):
 
         subtitle_label = ctk.CTkLabel(
             header_frame,
-            text="Edge-AI Real-Time Inspector (Raspberry Pi 4 / PC)",
+            text="Edge-AI Multi-Feature System (Raspberry Pi 4 / PC)",
             font=ctk.CTkFont(family="Helvetica", size=12),
             text_color="#888888"
         )
@@ -99,7 +103,7 @@ class AvocadoApp(ctk.CTk):
         self.cam2_label.pack(side="right", fill="both", expand=True, padx=2, pady=2)
 
         # --- Right Panel: Gauge & Metrics ---
-        right_panel = ctk.CTkFrame(main_content, width=380, fg_color="#181818", corner_radius=10)
+        right_panel = ctk.CTkFrame(main_content, width=390, fg_color="#181818", corner_radius=10)
         right_panel.pack(side="right", fill="y", padx=(8, 0), pady=5)
         right_panel.pack_propagate(False)
 
@@ -109,55 +113,74 @@ class AvocadoApp(ctk.CTk):
             font=ctk.CTkFont(size=16, weight="bold"),
             text_color="#2ecc71"
         )
-        gauge_title.pack(padx=15, pady=(15, 5))
+        gauge_title.pack(padx=15, pady=(12, 2))
 
         # Canvas Gauge Widget
-        self.gauge = GaugeWidget(right_panel, width=340, height=220, bg="#181818")
-        self.gauge.pack(padx=10, pady=5)
+        self.gauge = GaugeWidget(right_panel, width=340, height=210, bg="#181818")
+        self.gauge.pack(padx=10, pady=2)
 
         # Status Cards Frame
         cards_frame = ctk.CTkFrame(right_panel, fg_color="#222222", corner_radius=8)
-        cards_frame.pack(fill="x", padx=15, pady=10)
+        cards_frame.pack(fill="x", padx=15, pady=8)
+
+        # Metric 0: Variety Label
+        self.lbl_variety = ctk.CTkLabel(
+            cards_frame,
+            text="🏷️ สายพันธุ์ (Variety): ---",
+            font=ctk.CTkFont(size=15, weight="bold"),
+            text_color="#3498db"
+        )
+        self.lbl_variety.pack(anchor="w", padx=15, pady=(8, 3))
 
         # Metric 1: Ripeness Status
         self.lbl_status = ctk.CTkLabel(
             cards_frame,
-            text="ระดับความสุก: ---",
-            font=ctk.CTkFont(size=16, weight="bold"),
+            text="🥑 ระดับความสุก: ---",
+            font=ctk.CTkFont(size=15, weight="bold"),
             text_color="#ffffff"
         )
-        self.lbl_status.pack(anchor="w", padx=15, pady=(10, 4))
+        self.lbl_status.pack(anchor="w", padx=15, pady=3)
 
         # Metric 2: Confidence
         self.lbl_conf = ctk.CTkLabel(
             cards_frame,
             text="ความเชื่อมั่น (Confidence): 0.0%",
-            font=ctk.CTkFont(size=13),
+            font=ctk.CTkFont(size=12),
             text_color="#aaaaaa"
         )
-        self.lbl_conf.pack(anchor="w", padx=15, pady=4)
+        self.lbl_conf.pack(anchor="w", padx=15, pady=2)
 
         # Metric 3: Processing Latency
         self.lbl_latency = ctk.CTkLabel(
             cards_frame,
             text="เวลาประมวลผล (Latency): 0.0 ms",
-            font=ctk.CTkFont(size=13),
+            font=ctk.CTkFont(size=12),
             text_color="#aaaaaa"
         )
-        self.lbl_latency.pack(anchor="w", padx=15, pady=(4, 10))
+        self.lbl_latency.pack(anchor="w", padx=15, pady=(2, 8))
 
         # Action Buttons
         btn_frame = ctk.CTkFrame(right_panel, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=15, pady=10)
+        btn_frame.pack(fill="x", padx=15, pady=5)
+
+        btn_trainer = ctk.CTkButton(
+            btn_frame,
+            text="🎓 เทรนและจัดการสายพันธุ์ (Train & Label Studio)",
+            font=ctk.CTkFont(size=13, weight="bold"),
+            fg_color="#8e44ad",
+            hover_color="#6c3483",
+            command=self.open_trainer_studio
+        )
+        btn_trainer.pack(fill="x", pady=4)
 
         btn_gen_ds = ctk.CTkButton(
             btn_frame,
-            text="⚡ สร้าง/สุ่ม Dataset จำลอง",
+            text="⚡ สุ่ม Dataset ความสุกจำลอง",
             fg_color="#34495e",
             hover_color="#2c3e50",
             command=self.on_generate_dataset
         )
-        btn_gen_ds.pack(fill="x", pady=6)
+        btn_gen_ds.pack(fill="x", pady=4)
 
         btn_snap = ctk.CTkButton(
             btn_frame,
@@ -166,7 +189,7 @@ class AvocadoApp(ctk.CTk):
             hover_color="#219150",
             command=self.on_snapshot
         )
-        btn_snap.pack(fill="x", pady=6)
+        btn_snap.pack(fill="x", pady=4)
 
         # System Status Footer Inside Right Panel
         self.lbl_sys_info = ctk.CTkLabel(
@@ -175,7 +198,7 @@ class AvocadoApp(ctk.CTk):
             font=ctk.CTkFont(size=11),
             text_color="#2ecc71"
         )
-        self.lbl_sys_info.pack(side="bottom", pady=15)
+        self.lbl_sys_info.pack(side="bottom", pady=10)
 
     def change_view_mode(self, value):
         if "Split" in value:
@@ -191,6 +214,21 @@ class AvocadoApp(ctk.CTk):
             self.cam1_label.pack_forget()
             self.cam2_label.pack(fill="both", expand=True, padx=2, pady=2)
 
+    def open_trainer_studio(self):
+        if self.trainer_win is None or not self.trainer_win.winfo_exists():
+            self.trainer_win = TrainerLabelerStudio(dataset_dir=self.variety_dir)
+            self.trainer_win.protocol("WM_DELETE_WINDOW", self.on_trainer_closed)
+        else:
+            self.trainer_win.focus()
+
+    def on_trainer_closed(self):
+        if self.trainer_win:
+            self.trainer_win.on_closing()
+            self.trainer_win = None
+        # Reload Variety Classifier Engine
+        self.classifier.variety_trainer.load_or_train()
+        self.lbl_sys_info.configure(text="● โหลดโมเดลสายพันธุ์ใหม่เรียบร้อยแล้ว!", text_color="#f1c40f")
+
     def on_generate_dataset(self):
         generate_sample_dataset(self.dataset_dir)
         self.classifier.train_model()
@@ -199,9 +237,9 @@ class AvocadoApp(ctk.CTk):
     def on_snapshot(self):
         # Save snapshot image
         if hasattr(self, "current_ann1") and self.current_ann1 is not None:
-            os.makedirs(r"d:\Project\program\snapshots", exist_ok=True)
+            os.makedirs(r"d:\Project\snapshots", exist_ok=True)
             fname = f"snapshot_{int(time.time())}.jpg"
-            fpath = os.path.join(r"d:\Project\program\snapshots", fname)
+            fpath = os.path.join(r"d:\Project\snapshots", fname)
             cv2.imwrite(fpath, self.current_ann1)
             self.lbl_sys_info.configure(text=f"● บันทึกภาพสำเร็จ: {fname}", text_color="#2ecc71")
 
@@ -214,9 +252,9 @@ class AvocadoApp(ctk.CTk):
         # Read Dual Camera Frames
         frame1, frame2 = self.cam_manager.read_frames()
 
-        # Classify Avocado Ripeness on Cam 1 & Cam 2
-        ann1, cat1, score1, conf1 = self.classifier.predict_frame(frame1)
-        ann2, cat2, score2, conf2 = self.classifier.predict_frame(frame2)
+        # Classify Avocado Ripeness AND Variety on Cam 1 & Cam 2
+        ann1, cat1, score1, conf1, var1, var_conf1 = self.classifier.predict_frame(frame1)
+        ann2, cat2, score2, conf2, var2, var_conf2 = self.classifier.predict_frame(frame2)
 
         self.current_ann1 = ann1
 
@@ -232,7 +270,8 @@ class AvocadoApp(ctk.CTk):
         status_th = {"Unripe": "ดิบ (Unripe)", "Mid-ripe": "กึ่งสุก (Mid-ripe)", "Ripe": "สุก (Ripe)"}.get(cat1, cat1)
         status_colors = {"Unripe": "#2ecc71", "Mid-ripe": "#f39c12", "Ripe": "#e74c3c"}
         
-        self.lbl_status.configure(text=f"ระดับความสุก: {status_th}", text_color=status_colors.get(cat1, "#ffffff"))
+        self.lbl_variety.configure(text=f"🏷️ สายพันธุ์: {var1} ({var_conf1:.0f}%)", text_color="#3498db")
+        self.lbl_status.configure(text=f"🥑 ระดับความสุก: {status_th}", text_color=status_colors.get(cat1, "#ffffff"))
         self.lbl_conf.configure(text=f"ความเชื่อมั่น (Confidence): {avg_conf:.1f}%")
         self.lbl_latency.configure(text=f"เวลาประมวลผล (Latency): {latency_ms:.1f} ms")
 
@@ -256,6 +295,11 @@ class AvocadoApp(ctk.CTk):
 
     def on_closing(self):
         self.is_running = False
+        if self.trainer_win:
+            try:
+                self.trainer_win.on_closing()
+            except Exception:
+                pass
         self.cam_manager.release()
         self.destroy()
 

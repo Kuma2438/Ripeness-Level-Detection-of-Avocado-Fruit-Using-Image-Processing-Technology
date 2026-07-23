@@ -1,14 +1,18 @@
 import cv2
 import numpy as np
 import os
+from avocado_variety_trainer import AvocadoVarietyTrainer
 
 class AvocadoClassifier:
-    def __init__(self, dataset_dir=r"d:\Project\program\dataset"):
+    def __init__(self, dataset_dir=r"d:\Project\program\dataset", variety_dir=r"d:\Project\dataset\varieties"):
         self.categories = ["Unripe", "Mid-ripe", "Ripe"]
         self.dataset_dir = dataset_dir
         self.trained = False
         
-        # Train baseline classifier if dataset exists
+        # Variety Classifier Engine
+        self.variety_trainer = AvocadoVarietyTrainer(dataset_dir=variety_dir)
+        
+        # Train baseline ripeness classifier if dataset exists
         self.train_model()
 
     def train_model(self):
@@ -41,6 +45,9 @@ class AvocadoClassifier:
             self.X_train_norm = (self.X_train - self.mean) / self.std
             self.trained = True
 
+        # Also reload/train variety model
+        self.variety_trainer.load_or_train()
+
     def extract_features(self, img_bgr):
         """Extract color and texture features from image/ROI"""
         if img_bgr is None or img_bgr.size == 0:
@@ -62,20 +69,17 @@ class AvocadoClassifier:
 
     def predict_frame(self, frame_bgr):
         """
-        Processes real-time frame, detects avocado, classifies ripeness,
-        and draws overlay bounding box & status badge.
-        Returns: annotated_frame, category, score (0-100), confidence (%)
+        Processes real-time frame, detects avocado, classifies ripeness AND variety/label,
+        and draws overlay bounding box & status badges.
+        Returns: annotated_frame, category (Ripeness), score (0-100), confidence (%), variety_name, variety_conf
         """
         if frame_bgr is None:
-            return None, "No Signal", 0.0, 0.0
+            return None, "No Signal", 0.0, 0.0, "Unknown", 0.0
             
         annotated = frame_bgr.copy()
         h, w, _ = frame_bgr.shape
         
         # Segment object or central region
-        hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
-        
-        # Detect non-white/non-background objects
         gray = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
         _, thresh = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY_INV)
         
@@ -102,11 +106,13 @@ class AvocadoClassifier:
         feats = self.extract_features(target_roi)
         
         if feats is None:
-            return annotated, "Unripe", 0.0, 0.0
+            return annotated, "Unripe", 0.0, 0.0, "Unknown", 0.0
+
+        # Predict Variety / Cultivar Label
+        variety_name, variety_conf = self.variety_trainer.predict(target_roi)
 
         # Classification logic via KNN / Color Space Rule
         mean_g = feats[1]
-        mean_r = feats[0]
         texture_sd = feats[6]
 
         if self.trained:
@@ -132,7 +138,6 @@ class AvocadoClassifier:
         category = self.categories[pred_class]
         
         # Calculate Gauge Score (0.0 to 100.0)
-        # 0 - 33.3: Unripe, 33.3 - 66.6: Mid-ripe, 66.6 - 100.0: Ripe
         if pred_class == 0: # Unripe
             score = 15.0 + (1.0 - min(1.0, max(0.0, (215 - mean_g)/50.0))) * 18.0
         elif pred_class == 1: # Mid-ripe
@@ -142,13 +147,20 @@ class AvocadoClassifier:
             
         score = float(np.clip(score, 5.0, 98.0))
 
-        # Overlay Status Badge
-        badge_colors = [(40, 200, 40), (40, 180, 220), (50, 50, 200)] # BGR: Green, Yellow/Amber, Red/Dark
+        # Overlay Status Badges
+        badge_colors = [(40, 200, 40), (40, 180, 220), (50, 50, 200)] # BGR
         color = badge_colors[pred_class]
         
         bx, by, bw, bh = target_box
-        label_str = f"{category} ({confidence:.0f}%)"
-        cv2.rectangle(annotated, (bx, max(0, by - 30)), (bx + 180, max(30, by)), color, -1)
-        cv2.putText(annotated, label_str, (bx + 8, max(22, by - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
         
-        return annotated, category, score, confidence
+        # Variety Badge (Top)
+        variety_str = f"Variety: {variety_name}"
+        cv2.rectangle(annotated, (bx, max(0, by - 55)), (bx + max(200, len(variety_str)*11), max(25, by - 30)), (140, 50, 20), -1)
+        cv2.putText(annotated, variety_str, (bx + 8, max(18, by - 36)), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2)
+
+        # Ripeness Badge (Bottom)
+        label_str = f"{category} ({confidence:.0f}%)"
+        cv2.rectangle(annotated, (bx, max(0, by - 28)), (bx + 180, max(28, by)), color, -1)
+        cv2.putText(annotated, label_str, (bx + 8, max(20, by - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2)
+        
+        return annotated, category, score, confidence, variety_name, variety_conf
