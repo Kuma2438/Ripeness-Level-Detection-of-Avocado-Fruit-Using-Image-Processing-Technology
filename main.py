@@ -19,7 +19,7 @@ def print_banner():
     print("=" * 65)
 
 def run_gui_app():
-    print("\n[>] Launching Avocado Variety & Ripeness Image Inspector App...")
+    print("\n[>] Launching Real-Time Background Camera Inspector App...")
     subprocess.run([sys.executable, "app.py"])
 
 def run_trainer_gui():
