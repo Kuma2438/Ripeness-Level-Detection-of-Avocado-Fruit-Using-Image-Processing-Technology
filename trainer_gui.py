@@ -4,6 +4,7 @@ import cv2
 import time
 import glob
 import shutil
+import threading
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -27,21 +28,33 @@ class TrainerLabelerStudio(ctk.CTk):
 
         self.trainer = AvocadoVarietyTrainer(dataset_dir=self.dataset_dir)
         
-        # Camera init
-        self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-        self.use_sim_cam = False
-        if not self.cap.isOpened() or not self.cap.read()[0]:
-            self.use_sim_cam = True
-            if self.cap:
-                self.cap.release()
-
         self.is_running = True
+        self.is_training = False
         self.selected_label = ""
-        self.sim_tick = 0
+        self.cap = None
+        self.use_sim_cam = True
+
+        # Non-blocking camera initialization in background thread
+        threading.Thread(target=self.init_camera_async, daemon=True).start()
 
         self.build_ui()
         self.refresh_variety_list()
         self.update_webcam_loop()
+
+    def init_camera_async(self):
+        """Asynchronously initialize webcam to prevent GUI freeze on startup"""
+        try:
+            cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+            if cap.isOpened():
+                ret, _ = cap.read()
+                if ret:
+                    self.cap = cap
+                    self.use_sim_cam = False
+                    return
+                cap.release()
+        except Exception:
+            pass
+        self.use_sim_cam = True
 
     def build_ui(self):
         # Header
@@ -150,7 +163,7 @@ class TrainerLabelerStudio(ctk.CTk):
         )
         list_lbl.pack(padx=15, pady=(10, 2), anchor="w")
 
-        self.variety_scroll = ctk.CTkScrollableFrame(right_panel, fg_color="#222222", corner_radius=8, height=220)
+        self.variety_scroll = ctk.CTkScrollableFrame(right_panel, fg_color="#222222", corner_radius=8, height=200)
         self.variety_scroll.pack(fill="x", padx=15, pady=5)
 
         # Info Box / Status
@@ -182,7 +195,7 @@ class TrainerLabelerStudio(ctk.CTk):
         )
         self.lbl_train_stats.pack(padx=12, pady=2, anchor="w")
 
-        btn_start_train = ctk.CTkButton(
+        self.btn_start_train = ctk.CTkButton(
             train_box,
             text="⚡ เริ่มเทรนโมเดลสายพันธุ์ (Start Training)",
             font=ctk.CTkFont(size=14, weight="bold"),
@@ -190,7 +203,7 @@ class TrainerLabelerStudio(ctk.CTk):
             hover_color="#c0392b",
             command=self.start_training
         )
-        btn_start_train.pack(fill="x", padx=12, pady=10)
+        self.btn_start_train.pack(fill="x", padx=12, pady=10)
 
     def refresh_variety_list(self):
         """Refreshes the scrollable list of variety labels"""
@@ -242,8 +255,9 @@ class TrainerLabelerStudio(ctk.CTk):
 
         # Update train stats
         total_imgs = sum([len(glob.glob(os.path.join(self.dataset_dir, f, "*.*"))) for f in folders])
+        status_text = "กำลังเทรนโมเดล..." if self.is_training else ('พร้อมใช้งาน' if self.trainer.trained else 'ยังไม่ได้เทรน')
         self.lbl_train_stats.configure(
-            text=f"มี {len(folders)} สายพันธุ์ | ทั้งหมด {total_imgs} ภาพตัวอย่าง\nสถานะโมเดล: {'พร้อมใช้งาน' if self.trainer.trained else 'ยังไม่ได้เทรน'}"
+            text=f"มี {len(folders)} สายพันธุ์ | ทั้งหมด {total_imgs} ภาพตัวอย่าง\nสถานะโมเดล: {status_text}"
         )
 
     def select_label(self, label_name):
@@ -301,13 +315,37 @@ class TrainerLabelerStudio(ctk.CTk):
             self.refresh_variety_list()
 
     def start_training(self):
-        success, samples, classes = self.trainer.train()
+        """Asynchronously start model training in a background thread to prevent GUI freeze"""
+        if self.is_training:
+            return
+
+        self.is_training = True
+        self.btn_start_train.configure(text="⏳ กำลังเทรนโมเดล... (Training...)", state="disabled", fg_color="#7f8c8d")
+        self.lbl_train_stats.configure(text="สถานะโมเดล: ⏳ กำลังสกัด Feature และเทรนโมเดล...")
+
+        # Run training in background daemon thread
+        threading.Thread(target=self._run_training_worker, daemon=True).start()
+
+    def _run_training_worker(self):
+        try:
+            success, samples, classes = self.trainer.train()
+        except Exception as e:
+            success, samples, classes = False, 0, 0
+            print(f"Training worker error: {e}")
+
+        # Post result back to main GUI thread safely
+        self.after(0, lambda: self._on_training_finished(success, samples, classes))
+
+    def _on_training_finished(self, success, samples, classes):
+        self.is_training = False
+        self.btn_start_train.configure(text="⚡ เริ่มเทรนโมเดลสายพันธุ์ (Start Training)", state="normal", fg_color="#e74c3c")
+        self.refresh_variety_list()
+
         if success:
             messagebox.showinfo(
                 "สำเร็จ",
                 f"🎉 เทรนโมเดลจำแนกสายพันธุ์สำเร็จเรียบร้อยแล้ว!\n\n- จำนวนสายพันธุ์: {classes} สายพันธุ์\n- ตัวอย่างภาพทั้งหมด: {samples} ภาพ\n- บันทึกไฟล์โมเดลที่: variety_model.pkl"
             )
-            self.refresh_variety_list()
         else:
             messagebox.showerror("ผิดพลาด", "ไม่สามารถเทรนโมเดลได้ กรุณาเพิ่มสายพันธุ์อย่างน้อย 1 สายพันธุ์และมีรูปภาพอย่างน้อย 2 ภาพ")
 
@@ -315,11 +353,16 @@ class TrainerLabelerStudio(ctk.CTk):
         if not self.is_running:
             return
 
+        frame = None
         if not self.use_sim_cam and self.cap and self.cap.isOpened():
-            ret, frame = self.cap.read()
-            if not ret:
-                frame = self.get_simulated_frame()
-        else:
+            try:
+                ret, img = self.cap.read()
+                if ret:
+                    frame = img
+            except Exception:
+                pass
+
+        if frame is None:
             frame = self.get_simulated_frame()
 
         self.current_frame = frame.copy()
@@ -350,7 +393,10 @@ class TrainerLabelerStudio(ctk.CTk):
     def on_closing(self):
         self.is_running = False
         if self.cap and self.cap.isOpened():
-            self.cap.release()
+            try:
+                self.cap.release()
+            except Exception:
+                pass
         self.destroy()
 
 if __name__ == "__main__":
