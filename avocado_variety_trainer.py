@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 
 class AvocadoVarietyTrainer:
-    def __init__(self, dataset_dir=r"d:\Project\dataset\varieties", model_path=r"d:\Project\variety_model.pkl"):
+    def __init__(self, dataset_dir=r"d:\Project\dataset\varieties", model_path=r"d:\Project\models\variety_model.pkl"):
         self.dataset_dir = dataset_dir
         self.model_path = model_path
         self.classes = []
@@ -113,6 +113,7 @@ class AvocadoVarietyTrainer:
                 'mean': self.mean,
                 'std': self.std
             }
+            os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
             with open(self.model_path, 'wb') as f:
                 pickle.dump(payload, f)
             print(f"Variety Model trained successfully on {len(X)} samples across {len(self.classes)} classes.")
