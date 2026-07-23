@@ -20,7 +20,7 @@ echo =========================================================================
 echo.
 echo   Select an option:
 echo.
-echo    [1] Launch Real-Time Dual-Camera GUI App (app.py)
+echo    [1] Launch Avocado Image Inspector App (app.py)
 echo    [2] Open Variety Trainer and Labeler Studio (trainer_gui.py)
 echo    [3] Generate / Refresh Synthetic Sample Dataset (generate_dataset.py)
 echo    [4] Run ML Model Pipeline and Performance Evaluation (main.py --eval)
@@ -45,7 +45,7 @@ goto MENU
 :RUN_APP
 cls
 echo =========================================================================
-echo   [>] Launching Real-Time Dual-Camera GUI App...
+echo   [>] Launching Avocado Variety and Ripeness Image Inspector App...
 echo =========================================================================
 echo.
 python "%~dp0app.py"
