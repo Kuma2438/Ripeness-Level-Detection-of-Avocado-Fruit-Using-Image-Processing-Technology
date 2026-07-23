@@ -70,7 +70,7 @@ class AvocadoClassifier:
     def predict_frame(self, frame_bgr):
         """
         Processes real-time frame, detects avocado, classifies ripeness AND variety/label,
-        and draws overlay bounding box & status badges.
+        and draws overlay bounding box & dual status badges (Variety + Ripeness).
         Returns: annotated_frame, category (Ripeness), score (0-100), confidence (%), variety_name, variety_conf
         """
         if frame_bgr is None:
@@ -147,20 +147,31 @@ class AvocadoClassifier:
             
         score = float(np.clip(score, 5.0, 98.0))
 
-        # Overlay Status Badges
-        badge_colors = [(40, 200, 40), (40, 180, 220), (50, 50, 200)] # BGR
-        color = badge_colors[pred_class]
+        # --- Dual Label Overlay Badges (Variety + Ripeness) ---
+        badge_colors = [(40, 180, 40), (30, 150, 220), (40, 40, 220)] # BGR: Unripe(Green), Mid(Amber), Ripe(Red)
+        ripeness_color = badge_colors[pred_class]
+        variety_color = (180, 70, 20) # Blue/Purple BGR
         
         bx, by, bw, bh = target_box
         
-        # Variety Badge (Top)
-        variety_str = f"Variety: {variety_name}"
-        cv2.rectangle(annotated, (bx, max(0, by - 55)), (bx + max(200, len(variety_str)*11), max(25, by - 30)), (140, 50, 20), -1)
-        cv2.putText(annotated, variety_str, (bx + 8, max(18, by - 36)), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2)
+        # 1. Top Badge: Variety Label
+        variety_str = f"Variety: {variety_name} ({variety_conf:.0f}%)"
+        v_box_w = max(210, len(variety_str) * 11)
+        v_top_y = max(0, by - 60)
+        v_bot_y = max(30, by - 32)
+        
+        cv2.rectangle(annotated, (bx, v_top_y), (bx + v_box_w, v_bot_y), variety_color, -1)
+        cv2.rectangle(annotated, (bx, v_top_y), (bx + v_box_w, v_bot_y), (255, 255, 255), 1)
+        cv2.putText(annotated, variety_str, (bx + 8, v_bot_y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2)
 
-        # Ripeness Badge (Bottom)
-        label_str = f"{category} ({confidence:.0f}%)"
-        cv2.rectangle(annotated, (bx, max(0, by - 28)), (bx + 180, max(28, by)), color, -1)
-        cv2.putText(annotated, label_str, (bx + 8, max(20, by - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2)
+        # 2. Bottom Badge: Ripeness Level Label
+        ripeness_str = f"Ripeness: {category} ({confidence:.0f}%)"
+        r_box_w = max(210, len(ripeness_str) * 11)
+        r_top_y = max(30, by - 30)
+        r_bot_y = max(60, by - 2)
+        
+        cv2.rectangle(annotated, (bx, r_top_y), (bx + r_box_w, r_bot_y), ripeness_color, -1)
+        cv2.rectangle(annotated, (bx, r_top_y), (bx + r_box_w, r_bot_y), (255, 255, 255), 1)
+        cv2.putText(annotated, ripeness_str, (bx + 8, r_bot_y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 2)
         
         return annotated, category, score, confidence, variety_name, variety_conf
