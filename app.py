@@ -21,9 +21,9 @@ class BackgroundCameraAvocadoApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("🥑 ระบบตรวจวัดระดับความสุกและสายพันธุ์อะโวคาโด (Background Camera Inspector)")
-        self.geometry("1100x720")
-        self.minsize(920, 600)
+        self.title("🥑 ระบบตรวจวัดระดับความสุกและจำแนกสายพันธุ์อะโวคาโด (Avocado Inspector Dashboard)")
+        self.geometry("1080x720")
+        self.minsize(960, 640)
 
         # Dataset & Model Initialization
         self.dataset_dir = r"d:\Project\program\dataset"
@@ -44,146 +44,140 @@ class BackgroundCameraAvocadoApp(ctk.CTk):
         self.update_loop()
 
     def build_ui(self):
-        # 1. Header Frame
-        header_frame = ctk.CTkFrame(self, corner_radius=10, fg_color="#1e1e1e")
-        header_frame.pack(fill="x", padx=20, pady=(20, 10))
+        # Single Unified Outer Container Frame (รวมอยู่ในช่องเดียวกันทั้งหมด)
+        unified_card = ctk.CTkFrame(self, fg_color="#181818", corner_radius=16, border_width=1, border_color="#2c3e50")
+        unified_card.pack(fill="both", expand=True, padx=20, pady=20)
+
+        # --- 1. Header Section Inside Card ---
+        header_box = ctk.CTkFrame(unified_card, fg_color="#222222", corner_radius=12)
+        header_box.pack(fill="x", padx=20, pady=(20, 15))
 
         title_label = ctk.CTkLabel(
-            header_frame, 
-            text="🥑 ระบบตรวจวัดระดับความสุกและจำแนกสายพันธุ์อะโวคาโด (Real-Time Background Engine)",
-            font=ctk.CTkFont(family="Helvetica", size=20, weight="bold"),
+            header_box, 
+            text="🥑 ระบบตรวจวัดระดับความสุกและจำแนกสายพันธุ์อะโวคาโด (Avocado Inspector Engine)",
+            font=ctk.CTkFont(family="Helvetica", size=19, weight="bold"),
             text_color="#2ecc71"
         )
-        title_label.pack(side="left", padx=20, pady=14)
+        title_label.pack(side="left", padx=20, pady=12)
 
-        subtitle_label = ctk.CTkLabel(
-            header_frame,
-            text="● Live Camera Active (Hidden Feed)",
+        self.lbl_cam_status = ctk.CTkLabel(
+            header_box,
+            text="● กล้องทำงานเบื้องหลัง (Live Active)",
             font=ctk.CTkFont(family="Helvetica", size=12, weight="bold"),
             text_color="#2ecc71"
         )
-        subtitle_label.pack(side="right", padx=20, pady=14)
+        self.lbl_cam_status.pack(side="right", padx=20, pady=12)
 
-        # 2. Main Content Frame (Split Center Left: Big Gauge Meter, Right: Live Cards & Control)
-        main_content = ctk.CTkFrame(self, fg_color="transparent")
-        main_content.pack(fill="both", expand=True, padx=20, pady=5)
+        # --- 2. Main Dashboard Content Grid Inside Card ---
+        content_box = ctk.CTkFrame(unified_card, fg_color="transparent")
+        content_box.pack(fill="both", expand=True, padx=20, pady=5)
 
-        # --- Left Panel: Large Gauge Meter & Status Badge ---
-        left_panel = ctk.CTkFrame(main_content, fg_color="#181818", corner_radius=12)
-        left_panel.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=5)
+        # Left Column: Large Gauge Widget
+        gauge_box = ctk.CTkFrame(content_box, fg_color="#202020", corner_radius=12, border_width=1, border_color="#333333")
+        gauge_box.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=5)
 
-        g_header = ctk.CTkLabel(
-            left_panel,
-            text="🎯 เกจวัดระดับความสุก (Ripeness Gauge Meter)",
-            font=ctk.CTkFont(size=18, weight="bold"),
+        g_title = ctk.CTkLabel(
+            gauge_box,
+            text="🎯 เกจวัดระดับความสุก (Ripeness Gauge)",
+            font=ctk.CTkFont(size=16, weight="bold"),
             text_color="#2ecc71"
         )
-        g_header.pack(padx=20, pady=(20, 10))
+        g_title.pack(padx=15, pady=(15, 5))
 
-        # Canvas Gauge Widget (Large)
-        self.gauge = GaugeWidget(left_panel, width=420, height=260, bg="#181818")
-        self.gauge.pack(padx=20, pady=10)
+        # Canvas Gauge Widget
+        self.gauge = GaugeWidget(gauge_box, width=400, height=250, bg="#202020")
+        self.gauge.pack(padx=15, pady=5)
 
-        # Main Ripeness Status Badge Banner
-        self.badge_status = ctk.CTkFrame(left_panel, fg_color="#222222", corner_radius=10)
-        self.badge_status.pack(fill="x", padx=30, pady=15)
+        # Right Column: Unified Metrics & Status Cards
+        metrics_box = ctk.CTkFrame(content_box, fg_color="#202020", corner_radius=12, border_width=1, border_color="#333333")
+        metrics_box.pack(side="right", fill="both", expand=True, padx=(10, 0), pady=5)
 
-        self.lbl_main_status = ctk.CTkLabel(
-            self.badge_status,
-            text="🥑 ระดับความสุก: กำลังประมวลผล...",
-            font=ctk.CTkFont(size=20, weight="bold"),
-            text_color="#ffffff"
-        )
-        self.lbl_main_status.pack(pady=14)
-
-        # --- Right Panel: Variety Card, Confidence & Actions ---
-        right_panel = ctk.CTkFrame(main_content, width=440, fg_color="#181818", corner_radius=12)
-        right_panel.pack(side="right", fill="y", padx=(10, 0), pady=5)
-        right_panel.pack_propagate(False)
-
-        cards_title = ctk.CTkLabel(
-            right_panel,
-            text="📊 ผลการเปรียบเทียบกับ Dataset (Live Prediction)",
+        m_title = ctk.CTkLabel(
+            metrics_box,
+            text="📊 ผลการวิเคราะห์และทำนายภาพ (CNN Live Prediction)",
             font=ctk.CTkFont(size=16, weight="bold"),
             text_color="#f39c12"
         )
-        cards_title.pack(padx=20, pady=(20, 10), anchor="w")
+        m_title.pack(padx=20, pady=(15, 10), anchor="w")
 
-        # Status Cards Container
-        cards_box = ctk.CTkFrame(right_panel, fg_color="#222222", corner_radius=10)
-        cards_box.pack(fill="x", padx=20, pady=5)
+        # Status 1: Main Ripeness Level Banner
+        self.ripeness_card = ctk.CTkFrame(metrics_box, fg_color="#282828", corner_radius=10)
+        self.ripeness_card.pack(fill="x", padx=20, pady=6)
 
-        # Metric 1: Variety Card
+        self.lbl_main_status = ctk.CTkLabel(
+            self.ripeness_card,
+            text="🥑 ระดับความสุก: กำลังประมวลผล...",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color="#ffffff"
+        )
+        self.lbl_main_status.pack(anchor="w", padx=16, pady=12)
+
+        # Status 2: Variety Label Banner
+        self.variety_card = ctk.CTkFrame(metrics_box, fg_color="#282828", corner_radius=10)
+        self.variety_card.pack(fill="x", padx=20, pady=6)
+
         self.lbl_variety = ctk.CTkLabel(
-            cards_box,
+            self.variety_card,
             text="🏷️ สายพันธุ์ (Variety): ---",
             font=ctk.CTkFont(size=16, weight="bold"),
             text_color="#3498db"
         )
-        self.lbl_variety.pack(anchor="w", padx=18, pady=(15, 6))
+        self.lbl_variety.pack(anchor="w", padx=16, pady=12)
 
-        # Metric 2: Confidence % Card
+        # Status 3: Performance & Confidence Banner
+        stats_card = ctk.CTkFrame(metrics_box, fg_color="#282828", corner_radius=10)
+        stats_card.pack(fill="x", padx=20, pady=6)
+
         self.lbl_conf = ctk.CTkLabel(
-            cards_box,
+            stats_card,
             text="ความเชื่อมั่น (Confidence): 0.0%",
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=13),
             text_color="#aaaaaa"
         )
-        self.lbl_conf.pack(anchor="w", padx=18, pady=4)
+        self.lbl_conf.pack(anchor="w", padx=16, pady=(10, 3))
 
-        # Metric 3: Inference Latency
         self.lbl_latency = ctk.CTkLabel(
-            cards_box,
+            stats_card,
             text="เวลาประมวลผล (Latency): 0.0 ms",
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=13),
             text_color="#aaaaaa"
         )
-        self.lbl_latency.pack(anchor="w", padx=18, pady=(4, 15))
+        self.lbl_latency.pack(anchor="w", padx=16, pady=(3, 10))
 
-        # Camera Status Indicator Box
-        cam_info_box = ctk.CTkFrame(right_panel, fg_color="#1c2833", corner_radius=8)
-        cam_info_box.pack(fill="x", padx=20, pady=15)
-
-        self.lbl_cam_active = ctk.CTkLabel(
-            cam_info_box,
-            text="📹 กล้องยังคงทำงานอยู่เบื้องหลังแบบเรียลไทม์\n(ดึงภาพจากกล้องมาเปรียบเทียบกับ Dataset อัตโนมัติ)",
-            font=ctk.CTkFont(size=12),
-            text_color="#3498db"
-        )
-        self.lbl_cam_active.pack(padx=12, pady=10)
-
-        # Action Buttons
-        btn_frame = ctk.CTkFrame(right_panel, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=20, pady=10)
+        # --- 3. Action Control Buttons Bar Inside Card ---
+        btn_bar = ctk.CTkFrame(unified_card, fg_color="transparent")
+        btn_bar.pack(fill="x", padx=20, pady=(10, 15))
 
         btn_trainer = ctk.CTkButton(
-            btn_frame,
+            btn_bar,
             text="🎓 เทรนและจัดการสายพันธุ์ (Trainer Studio)",
             font=ctk.CTkFont(size=14, weight="bold"),
+            height=42,
             fg_color="#8e44ad",
             hover_color="#6c3483",
             command=self.open_trainer_studio
         )
-        btn_trainer.pack(fill="x", pady=6)
+        btn_trainer.pack(side="left", fill="x", expand=True, padx=(0, 8))
 
         btn_snapshot = ctk.CTkButton(
-            btn_frame,
+            btn_bar,
             text="📸 บันทึกภาพเฟรมปัจจุบัน (Snapshot Frame)",
             font=ctk.CTkFont(size=14, weight="bold"),
+            height=42,
             fg_color="#27ae60",
             hover_color="#219150",
             command=self.on_snapshot
         )
-        btn_snapshot.pack(fill="x", pady=6)
+        btn_snapshot.pack(side="right", fill="x", expand=True, padx=(8, 0))
 
-        # System Status Footer
+        # Footer Status Label
         self.lbl_sys_info = ctk.CTkLabel(
-            right_panel,
-            text="● Live Engine Ready",
+            unified_card,
+            text="● พร้อมประมวลผลข้อมูล (PyTorch CNN Engine Active)",
             font=ctk.CTkFont(size=11),
             text_color="#2ecc71"
         )
-        self.lbl_sys_info.pack(side="bottom", pady=15)
+        self.lbl_sys_info.pack(pady=(0, 12))
 
     def open_trainer_studio(self):
         if self.trainer_win is None or not self.trainer_win.winfo_exists():
@@ -235,7 +229,7 @@ class BackgroundCameraAvocadoApp(ctk.CTk):
         status_th = {"Unripe": "ดิบ (Unripe)", "Mid-ripe": "กึ่งสุก (Mid-ripe)", "Ripe": "สุก (Ripe)"}.get(cat1, cat1)
         status_colors = {"Unripe": "#2ecc71", "Mid-ripe": "#f39c12", "Ripe": "#e74c3c"}
 
-        # Update UI Badges & Cards (No Camera Feed Displayed!)
+        # Update UI Badges & Cards Inside Consolidated Dashboard
         self.lbl_main_status.configure(text=f"🥑 ระดับความสุก: {status_th}", text_color=status_colors.get(cat1, "#ffffff"))
         self.lbl_variety.configure(text=f"🏷️ สายพันธุ์: {var1} ({var_conf1:.0f}%)", text_color="#3498db")
         self.lbl_conf.configure(text=f"ความเชื่อมั่น (Confidence): {avg_conf:.1f}%")
