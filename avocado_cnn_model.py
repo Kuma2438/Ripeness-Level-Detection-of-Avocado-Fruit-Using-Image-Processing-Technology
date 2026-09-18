@@ -1,4 +1,5 @@
 import os
+import random
 import cv2
 import numpy as np
 import torch
@@ -53,7 +54,7 @@ class AvocadoCNN(nn.Module):
         x = self.fc(x)
         return x
 
-# 2. Fast PyTorch CNN Engine with In-Memory Pre-loaded Tensors
+# 2. Fast PyTorch CNN Engine with Automatic 70% Train / 30% Test Split
 class PyTorchCNNEngine:
     def __init__(self, dataset_dir, model_save_path, default_classes=None):
         self.dataset_dir = dataset_dir
@@ -71,7 +72,7 @@ class PyTorchCNNEngine:
 
         self.load_or_train()
 
-    def train_model(self, epochs=4):
+    def train_model(self, epochs=4, split_ratio=0.70):
         if not os.path.exists(self.dataset_dir):
             return False
 
@@ -80,35 +81,55 @@ class PyTorchCNNEngine:
             return False
 
         self.classes = sorted(folders)
-        x_list = []
-        y_list = []
+        train_x_list, train_y_list = [], []
+        test_x_list, test_y_list = [], []
+
+        random.seed(42) # Fixed seed for reproducible 70/30 split
 
         for class_idx, class_name in enumerate(self.classes):
             folder_path = os.path.join(self.dataset_dir, class_name)
             files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp'))]
             
-            # Limit up to 60 images per class for fast interactive training
-            files = files[:60]
+            if len(files) == 0:
+                continue
+
+            random.shuffle(files)
             
-            for fname in files:
+            # --- Automatic 70% Train / 30% Test Split ---
+            split_idx = max(1, int(len(files) * split_ratio))
+            train_files = files[:split_idx]
+            test_files = files[split_idx:] if split_idx < len(files) else files[:1]
+
+            # Read 70% Train Images
+            for fname in train_files[:60]: # Fast interactive loader
                 fpath = os.path.join(folder_path, fname)
                 img_bgr = cv2.imread(fpath)
                 if img_bgr is not None and img_bgr.size > 0:
                     img_resized = cv2.resize(img_bgr, (128, 128))
                     img_rgb = Image.fromarray(cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB))
-                    img_tensor = self.transform(img_rgb)
-                    x_list.append(img_tensor)
-                    y_list.append(class_idx)
+                    train_x_list.append(self.transform(img_rgb))
+                    train_y_list.append(class_idx)
 
-        if len(x_list) < 2:
+            # Read 30% Test Images (Holdout Evaluation Set)
+            for fname in test_files[:30]:
+                fpath = os.path.join(folder_path, fname)
+                img_bgr = cv2.imread(fpath)
+                if img_bgr is not None and img_bgr.size > 0:
+                    img_resized = cv2.resize(img_bgr, (128, 128))
+                    img_rgb = Image.fromarray(cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB))
+                    test_x_list.append(self.transform(img_rgb))
+                    test_y_list.append(class_idx)
+
+        if len(train_x_list) < 2:
             return False
 
-        x_tensors = torch.stack(x_list).to(self.device)
-        y_tensors = torch.tensor(y_list, dtype=torch.long).to(self.device)
+        train_x_t = torch.stack(train_x_list).to(self.device)
+        train_y_t = torch.tensor(train_y_list, dtype=torch.long).to(self.device)
 
-        dataset = TensorDataset(x_tensors, y_tensors)
-        dataloader = DataLoader(dataset, batch_size=min(32, len(x_list)), shuffle=True)
+        dataset = TensorDataset(train_x_t, train_y_t)
+        dataloader = DataLoader(dataset, batch_size=min(32, len(train_x_list)), shuffle=True)
 
+        # Train CNN Model on 70% Training Set
         self.model = AvocadoCNN(num_classes=len(self.classes)).to(self.device)
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(self.model.parameters(), lr=0.001)
@@ -124,14 +145,26 @@ class PyTorchCNNEngine:
 
         self.trained = True
 
-        # Save PyTorch CNN weights and class names payload
+        # --- Automatic Accuracy Evaluation on 30% Unseen Test Set ---
+        test_acc = 100.0
+        if len(test_x_list) > 0:
+            self.model.eval()
+            test_x_t = torch.stack(test_x_list).to(self.device)
+            test_y_t = torch.tensor(test_y_list, dtype=torch.long).to(self.device)
+            with torch.no_grad():
+                test_outputs = self.model(test_x_t)
+                _, test_preds = torch.max(test_outputs, 1)
+                correct = (test_preds == test_y_t).sum().item()
+                test_acc = (correct / len(test_y_list)) * 100.0
+
+        # Save PyTorch CNN weights and class payload
         os.makedirs(os.path.dirname(self.model_save_path), exist_ok=True)
         checkpoint = {
             'state_dict': self.model.state_dict(),
             'classes': self.classes
         }
         torch.save(checkpoint, self.model_save_path)
-        print(f"PyTorch CNN Model trained on {len(x_list)} images across {len(self.classes)} classes. Saved to {self.model_save_path}")
+        print(f"PyTorch CNN trained on 70% set ({len(train_x_list)} imgs). Auto evaluated on 30% test set ({len(test_x_list)} imgs) -> Accuracy: {test_acc:.2f}%. Model saved to {self.model_save_path}")
         return True
 
     def load_or_train(self):
