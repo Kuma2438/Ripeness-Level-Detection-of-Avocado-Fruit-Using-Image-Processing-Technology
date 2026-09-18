@@ -5,7 +5,7 @@ import glob
 import time
 
 class DualCameraManager:
-    def __init__(self, dataset_dir=r"d:\Project\program\dataset"):
+    def __init__(self, dataset_dir=r"d:\Project\dataset"):
         self.cam1_id = 0
         self.cam2_id = 1
         

@@ -26,7 +26,7 @@ class BackgroundCameraAvocadoApp(ctk.CTk):
         self.minsize(960, 640)
 
         # Dataset & Model Initialization
-        self.dataset_dir = r"d:\Project\program\dataset"
+        self.dataset_dir = r"d:\Project\dataset"
         self.variety_dir = r"d:\Project\dataset\varieties"
         
         if not os.path.exists(self.dataset_dir):

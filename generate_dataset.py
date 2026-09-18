@@ -2,7 +2,7 @@ import os
 import cv2
 import numpy as np
 
-def generate_sample_dataset(output_dir=r"d:\Project\program\dataset"):
+def generate_sample_dataset(output_dir=r"d:\Project\dataset"):
     """
     Generates synthetic avocado sample images across 3 ripeness categories:
     - Unripe: Bright Green

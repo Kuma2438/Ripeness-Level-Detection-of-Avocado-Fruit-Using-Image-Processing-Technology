@@ -5,7 +5,7 @@ import torch
 from avocado_cnn_model import PyTorchCNNEngine
 
 class AvocadoClassifier:
-    def __init__(self, dataset_dir=r"d:\Project\program\dataset", variety_dir=r"d:\Project\dataset\varieties"):
+    def __init__(self, dataset_dir=r"d:\Project\dataset", variety_dir=r"d:\Project\dataset\varieties"):
         self.categories = ["Unripe", "Mid-ripe", "Ripe"]
         self.dataset_dir = dataset_dir
         self.variety_dir = variety_dir
