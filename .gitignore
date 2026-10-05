@@ -8,7 +8,9 @@ venv/
 .venv/
 build/
 dist/
+package/
 *.spec
+*.zip
 .vscode/
 .idea/
 snapshots/
