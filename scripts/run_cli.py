@@ -21,7 +21,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Avocado Ripeness & Variety CLI on Raspberry Pi 5")
     parser.add_argument("--image", type=str, help="Path to single image file for inference")
     parser.add_argument("--dir", type=str, help="Directory of images to batch process")
-    parser.add_argument("--live", action="store_true", help="Run continuous live inference from USB webcams")
+    parser.add_argument("--interactive", action="store_true", help="Interactive prompt mode: press Enter to capture & analyze fruit")
+    parser.add_argument("--live", action="store_true", help="Run continuous live streaming inference")
     parser.add_argument("--cam1", type=int, default=None, help="Primary USB camera index")
     parser.add_argument("--cam2", type=int, default=None, help="Secondary USB camera index")
     parser.add_argument("--json", action="store_true", help="Output results in JSON format")
@@ -62,10 +63,55 @@ def process_image(classifier: AvocadoClassifier, img_path: Path, output_json: bo
             print(f"Annotated frame saved to: {save_path}")
 
 
+def run_interactive(classifier: AvocadoClassifier, cam1_id: int | None, cam2_id: int | None, output_json: bool) -> None:
+    config = load_config()
+    cam_manager = DualCameraManager(config=config, cam1_id=cam1_id, cam2_id=cam2_id)
+    print("🥑 Interactive Avocado Inspector CLI Ready (Standby Mode)")
+    print("Press [Enter] to capture & analyze avocado, or type 'q' + [Enter] to quit.\n")
+
+    fruit_count = 0
+    try:
+        while True:
+            cmd = input(f"[Fruit #{fruit_count + 1}] Press Enter to Capture & Analyze > ")
+            if cmd.strip().lower() == "q":
+                break
+
+            t0 = time.time()
+            f1, f2 = cam_manager.read_frames()
+            res1 = classifier.predict_frame(f1)
+            res2 = classifier.predict_frame(f2)
+            latency = (time.time() - t0) * 1000.0
+
+            avg_score = (res1.score + res2.score) / 2.0
+            avg_conf = (res1.confidence + res2.confidence) / 2.0
+            fruit_count += 1
+
+            if output_json:
+                data = {
+                    "fruit_id": fruit_count,
+                    "ripeness": res1.category,
+                    "score": round(avg_score, 1),
+                    "confidence": round(avg_conf, 1),
+                    "variety": res1.variety_name,
+                    "latency_ms": round(latency, 1),
+                }
+                print(json.dumps(data))
+            else:
+                print(f"✅ Fruit #{fruit_count} Analysis Result:")
+                print(f"   - Ripeness Level : {res1.category}")
+                print(f"   - Ripeness Score : {avg_score:.1f}%")
+                print(f"   - Variety        : {res1.variety_name} ({res1.variety_confidence:.0f}%)")
+                print(f"   - Inference Time : {latency:.1f} ms\n")
+    except KeyboardInterrupt:
+        print("\nExiting.")
+    finally:
+        cam_manager.release()
+
+
 def run_live(classifier: AvocadoClassifier, cam1_id: int | None, cam2_id: int | None, output_json: bool) -> None:
     config = load_config()
     cam_manager = DualCameraManager(config=config, cam1_id=cam1_id, cam2_id=cam2_id)
-    print("Starting live USB webcam stream (Press Ctrl+C to stop)...")
+    print("Starting continuous live USB webcam stream (Press Ctrl+C to stop)...")
 
     try:
         while True:
@@ -74,7 +120,6 @@ def run_live(classifier: AvocadoClassifier, cam1_id: int | None, cam2_id: int | 
             res1 = classifier.predict_frame(f1)
             res2 = classifier.predict_frame(f2)
             latency = (time.time() - t0) * 1000.0
-
             avg_score = (res1.score + res2.score) / 2.0
 
             if output_json:
@@ -113,10 +158,12 @@ def main() -> None:
         for f in folder.iterdir():
             if f.suffix.lower() in valid_exts:
                 process_image(classifier, f, args.json, None)
+    elif args.interactive:
+        run_interactive(classifier, args.cam1, args.cam2, args.json)
     elif args.live:
         run_live(classifier, args.cam1, args.cam2, args.json)
     else:
-        print("Please provide --image, --dir, or --live. Use --help for details.")
+        run_interactive(classifier, args.cam1, args.cam2, args.json)
 
 
 if __name__ == "__main__":
