@@ -76,7 +76,7 @@ class PyTorchCNNEngine:
         if not os.path.exists(self.dataset_dir):
             return False
 
-        folders = [f for f in os.listdir(self.dataset_dir) if os.path.isdir(os.path.join(self.dataset_dir, f))]
+        folders = [f for f in os.listdir(self.dataset_dir) if os.path.isdir(os.path.join(self.dataset_dir, f)) and f.lower() != 'varieties']
         if len(folders) == 0:
             return False
 
