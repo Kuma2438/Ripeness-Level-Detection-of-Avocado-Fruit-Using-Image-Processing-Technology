@@ -1,0 +1,36 @@
+# Avocado Ripeness & Variety Detection Configuration
+
+camera:
+  cam1_id: 0                  # Primary USB camera index
+  cam2_id: 1                  # Secondary USB camera index (or null for single cam mode)
+  width: 640
+  height: 480
+  fps: 30
+  auto_fallback: true         # Fallback to single camera or synthetic feed if a camera is unavailable
+  backend: "default"          # "default", "v4l2" (recommended for Linux/Pi 5), or "dshow" (Windows)
+
+models:
+  ripeness_model_path: "models/ripeness_cnn.pth"
+  variety_model_path: "models/variety_cnn.pth"
+  image_size: [64, 64]
+  device: "auto"              # "cpu", "cuda", or "auto"
+
+dataset:
+  root_dir: "dataset"
+  varieties_dir: "dataset/varieties"
+  categories:
+    - "unripe"
+    - "mid_ripe"
+    - "ripe"
+
+training:
+  batch_size: 16
+  epochs: 20
+  learning_rate: 0.001
+  validation_split: 0.2
+
+inference:
+  ripeness_weight_color: 0.35
+  ripeness_weight_cnn: 0.65
+  unripe_threshold: 35.0
+  mid_ripe_threshold: 70.0
