@@ -27,10 +27,13 @@ htmlcov/
 secrets/
 credentials/
 
-# LocalAISecurity & SpeedOptimizer: Model checkpoints and exports
+# LocalAISecurity & SpeedOptimizer: Large Checkpoints & Logs
 *.pt
-*.pth
 *.onnx
 *.safetensors
 *.pt.bak
 *.log
+
+# Allow bundled pre-trained lightweight models
+!models/ripeness_cnn.pth
+!models/variety_cnn.pth
