@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "avocado-ripeness"
+version = "1.0.0"
+description = "Ripeness Level Detection & Variety Classification of Avocado Fruit Using Dual Cameras and CNN"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Avocado Inspection Team" }
+]
+dependencies = [
+    "torch>=2.0.0",
+    "opencv-python>=4.7.0",
+    "customtkinter>=5.2.0",
+    "Pillow>=9.5.0",
+    "numpy>=1.24.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.4.0",
+]
+
+[project.scripts]
+avocado-app = "avocado.ui.app:main"
+avocado-trainer = "avocado.ui.trainer_gui:main"
+avocado-cli = "scripts.run_cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

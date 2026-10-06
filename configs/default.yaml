@@ -1,0 +1,37 @@
+# Avocado Ripeness & Variety Detection Configuration
+
+camera:
+  driver: "auto"              # "auto" (probes Picamera2 CSI OV5647 -> USB V4L2 -> Sim), "picamera2", "usb", or "sim"
+  cam1_id: 0                  # Primary camera: CSI Port 0 or USB Video Index 0 (/dev/video0)
+  cam2_id: 1                  # Secondary camera: CSI Port 1 or USB Video Index 1 (/dev/video2)
+  width: 640
+  height: 480
+  fps: 30
+  auto_fallback: true         # Fallback to simulation if any camera is missing or disconnected
+  backend: "default"          # "default", "v4l2" (Linux), or "dshow" (Windows)
+
+models:
+  ripeness_model_path: "models/ripeness_cnn.pth"
+  variety_model_path: "models/variety_cnn.pth"
+  image_size: [64, 64]
+  device: "auto"              # "cpu", "cuda", or "auto"
+
+dataset:
+  root_dir: "dataset"
+  varieties_dir: "dataset/varieties"
+  categories:
+    - "unripe"
+    - "mid_ripe"
+    - "ripe"
+
+training:
+  batch_size: 16
+  epochs: 20
+  learning_rate: 0.001
+  validation_split: 0.2
+
+inference:
+  ripeness_weight_color: 0.35
+  ripeness_weight_cnn: 0.65
+  unripe_threshold: 35.0
+  mid_ripe_threshold: 70.0

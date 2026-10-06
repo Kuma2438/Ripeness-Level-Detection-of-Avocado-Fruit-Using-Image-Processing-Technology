@@ -1,0 +1,36 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+build/
+dist/
+package/
+*.spec
+*.zip
+.vscode/
+.idea/
+snapshots/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# LocalAISecurity: Secrets, Keys, and Environment Variables
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+secrets/
+credentials/
+
+# LocalAISecurity & SpeedOptimizer: Model checkpoints and exports
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.pt.bak
+*.log
