@@ -1,6 +1,110 @@
 @echo off
+setlocal enabledelayedexpansion
 title Avocado Ripeness and Variety System - Control Center
 
+:: =========================================================================
+:: Python Environment Resolution & Auto-Bootstrap
+:: =========================================================================
+set "PY_CMD="
+
+:: 1. Check local virtual environment
+if exist "%~dp0.venv\Scripts\python.exe" (
+    set "PY_CMD=%~dp0.venv\Scripts\python.exe"
+    goto PYTHON_READY
+)
+
+:: 2. Check py launcher
+py -3 -c "import sys" >nul 2>&1
+if !errorlevel! equ 0 (
+    set "PY_CMD=py -3"
+    goto CHECK_VENV
+)
+
+:: 3. Check system python (verify not Microsoft Store dummy alias)
+python -c "import sys" >nul 2>&1
+if !errorlevel! equ 0 (
+    set "PY_CMD=python"
+    goto CHECK_VENV
+)
+
+:: 4. Check standard installation directories
+for %%P in (
+    "%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
+    "C:\Python312\python.exe"
+    "C:\Python311\python.exe"
+    "C:\Python310\python.exe"
+    "C:\Program Files\Python312\python.exe"
+    "C:\Program Files\Python311\python.exe"
+    "C:\Program Files\Python310\python.exe"
+) do (
+    if exist %%P (
+        set "PY_CMD=%%~P"
+        goto CHECK_VENV
+    )
+)
+
+:: 5. Python not found - Prompt user to install
+:PYTHON_NOT_FOUND
+cls
+echo =========================================================================
+echo   [!] PYTHON ENVIRONMENT NOT DETECTED
+echo =========================================================================
+echo.
+echo   Avocado Ripeness System requires Python 3.10 or higher.
+echo.
+echo   Select an option to automatically setup Python:
+echo.
+echo    [1] Auto-Install Official Python 3.11 via Windows winget (Recommended)
+echo    [2] Open Python.org Download Page in Browser
+echo    [0] Exit
+echo.
+echo =========================================================================
+set /p INST_CHOICE="Enter choice (1, 2, or 0): "
+
+if "%INST_CHOICE%"=="1" (
+    echo.
+    echo [*] Installing Python 3.11 via winget... Please wait a moment...
+    winget install Python.Python.3.11 --silent --accept-package-agreements --accept-source-agreements
+    echo.
+    echo [+] Python installed. Restarting environment...
+    timeout /t 3 >nul
+    set "PATH=%LOCALAPPDATA%\Programs\Python\Python311;%LOCALAPPDATA%\Programs\Python\Python311\Scripts;%PATH%"
+    set "PY_CMD=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    goto CHECK_VENV
+)
+
+if "%INST_CHOICE%"=="2" (
+    start https://www.python.org/downloads/windows/
+    exit /b 0
+)
+
+exit /b 1
+
+:: 6. Setup local virtual environment & dependencies if missing
+:CHECK_VENV
+if not exist "%~dp0.venv\Scripts\python.exe" (
+    echo.
+    echo =========================================================================
+    echo   [*] Initial Setup: Creating local Virtual Environment (.venv)...
+    echo =========================================================================
+    %PY_CMD% -m venv "%~dp0.venv"
+    if exist "%~dp0.venv\Scripts\python.exe" (
+        set "PY_CMD=%~dp0.venv\Scripts\python.exe"
+        echo [*] Installing required dependencies (PyTorch, OpenCV, CustomTkinter)...
+        !PY_CMD! -m pip install --upgrade pip
+        !PY_CMD! -m pip install -r "%~dp0requirements.txt"
+        !PY_CMD! -m pip install -e "%~dp0"
+        echo [+] Setup completed successfully!
+    )
+) else (
+    set "PY_CMD=%~dp0.venv\Scripts\python.exe"
+)
+
+:PYTHON_READY
+
+:: Handle CLI shortcuts
 if /i "%~1"=="1" goto RUN_APP
 if /i "%~1"=="app" goto RUN_APP
 if /i "%~1"=="2" goto RUN_TRAINER
@@ -19,6 +123,8 @@ cls
 echo =========================================================================
 echo   AVOCADO RIPENESS AND VARIETY DETECTION SYSTEM - CONTROL CENTER
 echo =========================================================================
+echo.
+echo   Python Runtime: !PY_CMD!
 echo.
 echo   Select an option:
 echo.
@@ -52,7 +158,7 @@ echo =========================================================================
 echo   [>] Launching Avocado Inspection App...
 echo =========================================================================
 echo.
-python "%~dp0scripts\run_app.py"
+"%PY_CMD%" "%~dp0scripts\run_app.py"
 echo.
 pause
 goto MENU
@@ -63,7 +169,7 @@ echo =========================================================================
 echo   [>] Launching Avocado Variety Trainer Studio...
 echo =========================================================================
 echo.
-python "%~dp0scripts\run_trainer.py"
+"%PY_CMD%" "%~dp0scripts\run_trainer.py"
 echo.
 pause
 goto MENU
@@ -74,7 +180,7 @@ echo =========================================================================
 echo   [>] Running Interactive Avocado CLI...
 echo =========================================================================
 echo.
-python "%~dp0scripts\run_cli.py" --interactive
+"%PY_CMD%" "%~dp0scripts\run_cli.py" --interactive
 echo.
 pause
 goto MENU
@@ -85,7 +191,7 @@ echo =========================================================================
 echo   [>] Building Standalone Application Package...
 echo =========================================================================
 echo.
-python "%~dp0scripts\build_standalone.py" --output-dir package
+"%PY_CMD%" "%~dp0scripts\build_standalone.py" --output-dir package
 echo.
 pause
 goto MENU
@@ -96,7 +202,7 @@ echo =========================================================================
 echo   [>] Building Native Windows Setup Installer (Setup.exe)...
 echo =========================================================================
 echo.
-python "%~dp0scripts\build_installer.py"
+"%PY_CMD%" "%~dp0scripts\build_installer.py"
 echo.
 pause
 goto MENU
@@ -107,7 +213,7 @@ echo =========================================================================
 echo   [>] Running Automated Tests...
 echo =========================================================================
 echo.
-python -m unittest discover -s tests -p "test_*.py"
+"%PY_CMD%" -m unittest discover -s tests -p "test_*.py"
 echo.
 pause
 goto MENU
