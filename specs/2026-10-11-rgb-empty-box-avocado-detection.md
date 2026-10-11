@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-11
 - **Type:** Python script, Computer Vision Engine, Touchscreen UI & Documentation
-- **Status:** Approved
+- **Status:** Done
 
 ## 1. Goal
 1. Standardize camera capture and CNN inference to native RGB color space.
@@ -50,14 +50,14 @@
   - Windows standalone & Raspberry Pi 5 touch kiosk setup.
 
 ## 5. Acceptance criteria (checkable)
-- [ ] Empty frame returns `category="No Avocado"` and `score=None`.
-- [ ] Non-avocado objects return `category="Not Avocado"` and `score=None`.
-- [ ] Gauge widget displays `--%` and neutral message when empty/invalid.
-- [ ] UI provides a dedicated landscape mode fitting 480×320 resolution without clipping or missing controls.
-- [ ] Large touch button at bottom for easy fingertip operation on 85.42 mm × 55.60 mm screen.
-- [ ] Camera frames natively output RGB.
-- [ ] `README.md` rewritten with updated diagrams, detection guides, and hardware display section.
-- [ ] Unit tests pass cleanly.
+- [x] Empty frame returns `category="No Avocado"` and `score=None`.
+- [x] Non-avocado objects return `category="Not Avocado"` and `score=None`.
+- [x] Gauge widget displays `--%` and neutral message when empty/invalid.
+- [x] UI provides a dedicated landscape mode fitting 480×320 resolution without clipping or missing controls.
+- [x] Large touch button at bottom for easy fingertip operation on 85.42 mm × 55.60 mm screen.
+- [x] Camera frames natively output RGB.
+- [x] `README.md` rewritten with updated diagrams, detection guides, and hardware display section.
+- [x] Unit tests pass cleanly.
 
 ## 6. Assumptions
 - A1: 85.42 mm × 55.60 mm screen maps to 480×320 pixels (3:2 landscape) or scales responsively.
