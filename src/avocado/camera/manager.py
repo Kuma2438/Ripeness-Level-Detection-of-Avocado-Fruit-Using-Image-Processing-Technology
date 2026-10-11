@@ -66,7 +66,7 @@ class DualCameraManager:
                     for f in folder.glob("*.jpg"):
                         img = cv2.imread(str(f))
                         if img is not None:
-                            self.sim_images.append(img)
+                            self.sim_images.append(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
         if not self.sim_images:
             fallback = np.ones((self.height, self.width, 3), dtype=np.uint8) * 210
@@ -190,7 +190,7 @@ class DualCameraManager:
             (20, 35),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
-            (0, 255, 255),
+            (255, 255, 0),
             2,
         )
         return frame
@@ -204,7 +204,7 @@ class DualCameraManager:
         if cam_type == "picamera2" and picam_obj is not None:
             try:
                 rgb_arr = picam_obj.capture_array()
-                return cv2.cvtColor(rgb_arr, cv2.COLOR_RGB2BGR)
+                return rgb_arr
             except Exception:
                 return None
 
@@ -212,7 +212,7 @@ class DualCameraManager:
             try:
                 ret, img = cap_obj.read()
                 if ret and img is not None and img.size > 0:
-                    return img
+                    return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             except Exception:
                 return None
 

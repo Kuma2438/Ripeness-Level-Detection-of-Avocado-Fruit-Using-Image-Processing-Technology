@@ -23,12 +23,11 @@ _IMAGENET_MEAN = torch.tensor([0.485, 0.456, 0.406], dtype=torch.float32).view(3
 _IMAGENET_STD = torch.tensor([0.229, 0.224, 0.225], dtype=torch.float32).view(3, 1, 1)
 
 
-def preprocess_image_tensor(img_bgr: np.ndarray, target_size: Tuple[int, int] = (128, 128)) -> torch.Tensor:
-    """Converts a BGR image array into a normalized PyTorch tensor [3, H, W] with zero allocation overhead."""
-    if img_bgr.shape[:2] != target_size:
-        img_bgr = cv2.resize(img_bgr, target_size, interpolation=cv2.INTER_AREA)
-    rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-    tensor = torch.from_numpy(rgb).permute(2, 0, 1).float().div_(255.0)
+def preprocess_image_tensor(img_rgb: np.ndarray, target_size: Tuple[int, int] = (128, 128)) -> torch.Tensor:
+    """Converts a native RGB image array into a normalized PyTorch tensor [3, H, W] with zero allocation overhead."""
+    if img_rgb.shape[:2] != target_size:
+        img_rgb = cv2.resize(img_rgb, target_size, interpolation=cv2.INTER_AREA)
+    tensor = torch.from_numpy(img_rgb).permute(2, 0, 1).float().div_(255.0)
     return (tensor - _IMAGENET_MEAN) / _IMAGENET_STD
 
 
@@ -103,13 +102,15 @@ class AvocadoTrainer:
             for fpath in train_files[:max_train_per_class]:
                 img_bgr = cv2.imread(str(fpath))
                 if img_bgr is not None and img_bgr.size > 0:
-                    train_x_list.append(preprocess_image_tensor(img_bgr))
+                    img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+                    train_x_list.append(preprocess_image_tensor(img_rgb))
                     train_y_list.append(class_idx)
 
             for fpath in test_files[:max_test_per_class]:
                 img_bgr = cv2.imread(str(fpath))
                 if img_bgr is not None and img_bgr.size > 0:
-                    test_x_list.append(preprocess_image_tensor(img_bgr))
+                    img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+                    test_x_list.append(preprocess_image_tensor(img_rgb))
                     test_y_list.append(class_idx)
 
         if len(train_x_list) < 2:
@@ -166,9 +167,9 @@ class AvocadoTrainer:
         self.train_model()
 
     @torch.inference_mode()
-    def predict(self, crop_bgr: np.ndarray) -> Tuple[str, float]:
-        """Runs accelerated inference on a BGR image crop."""
-        if not self.trained or self.model is None or crop_bgr is None or crop_bgr.size == 0:
+    def predict(self, crop_rgb: np.ndarray) -> Tuple[str, float]:
+        """Runs accelerated inference on an RGB image crop."""
+        if not self.trained or self.model is None or crop_rgb is None or crop_rgb.size == 0:
             return "Unknown", 0.0
 
         try:

@@ -1,5 +1,11 @@
 # Avocado Ripeness & Variety Detection Configuration
 
+display:
+  mode: "auto"                # "auto", "compact_landscape" (for 85.42mm x 55.60mm / 480x320 screen), or "desktop" (1180x780)
+  width: 480
+  height: 320
+  fullscreen: false
+
 camera:
   driver: "auto"              # "auto" (probes Picamera2 CSI OV5647 -> USB V4L2 -> Sim), "picamera2", "usb", or "sim"
   cam1_id: 0                  # Primary camera: CSI Port 0 or USB Video Index 0 (/dev/video0)

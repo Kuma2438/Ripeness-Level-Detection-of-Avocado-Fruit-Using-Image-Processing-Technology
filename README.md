@@ -1,161 +1,78 @@
 # 🥑 Avocado Ripeness & Variety Detection System
-### ระบบตรวจวัดระดับความสุกและจำแนกสายพันธุ์อะโวคาโด (On-Demand Dual-Camera AI System)
+### ระบบตรวจวัดระดับความสุกและจำแนกสายพันธุ์อะโวคาโด (Native RGB, Multi-State AI & 85.42 mm × 55.60 mm Touchscreen Kiosk)
 
-[![Release: v1.1.0](https://img.shields.io/badge/Release-v1.1.0--refac5--10--69-blue.svg)](https://github.com/Kuma2438/Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology/releases/tag/v1.1.0-refac5-10-69)
 [![Platform: Windows / Linux / Raspberry Pi 5](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20Raspberry%20Pi%205-brightgreen.svg)](https://www.raspberrypi.com/products/raspberry-pi-5/)
-[![Standalone: Zero Python Required](https://img.shields.io/badge/Windows%20Standalone-Zero%20Python%20Required-orange.svg)](#-คู่มือการติดตั้งบน-windows-windows-installation-guide)
+[![Hardware Display: 85.42mm x 55.60mm](https://img.shields.io/badge/Hardware%20LCD-85.42%20%C3%97%2055.60%20mm%20(480%C3%97320%20Landscape)-blue.svg)](#-การแสดงผลบนจอฮาร์ดแวร์-8542-mm--5560-mm-hardware-touchscreen-guide)
+[![Pipeline: Native RGB888](https://img.shields.io/badge/Color%20Space-Native%20RGB888-orange.svg)](#-สถาปัตยกรรมระบบ-rgb-และการคัดกรองวัตถุ-rgb-pipeline--validation)
 [![PyTorch: 2.0+](https://img.shields.io/badge/PyTorch-2.0%2B%20(CPU%20Optimized)-red.svg)](https://pytorch.org/)
 [![Security: LocalAISecurity Hardened](https://img.shields.io/badge/Security-LocalAISecurity%20Hardened-success.svg)](#-ความปลอดภัยและประสิทธิภาพ-security--speed-optimizations)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-ระบบ AI ตรวจวัดระดับความสุกและจำแนกสายพันธุ์ผลอะโวคาโดแบบ **On-Demand (Standby Live Preview + ถ่ายภาพเพื่อวิเคราะห์เมื่อพร้อม)** รองรับกล้อง **Dual USB Webcams** และกล้องคู่ **Dual MIPI CSI บน Raspberry Pi 5** 
+ระบบ AI ตรวจวัดระดับความสุกและจำแนกสายพันธุ์ผลอะโวคาโดแบบ **On-Demand (Standby Live Preview + ตรวจวัดเมื่อสั่งการ)** ออกแบบมาสำหรับการใช้งานทั้งบนเครื่องคอมพิวเตอร์ทั่วไป และบนตู้คัดแยกอัตโนมัติ/หน้าจอสัมผัสขนาดกะทัดรัด **Raspberry Pi 5** 
 
-รองรับการติดตั้งและใช้งาน 2 แพลตฟอร์มหลัก:
-1. **Windows (Standalone 100%)**: ตัวติดตั้ง **`AvocadoInspector-Setup.exe`** และแบบ Portable ที่ฝัง Python Runtime ในตัว **ใช้งานได้ทันทีโดยไม่ต้องลง Python หรือไลบรารีใดๆ ในเครื่อง**
-2. **Linux & Raspberry Pi 5**: สคริปต์ติดตั้งระบบอัตโนมัติ 1-Click พร้อมรองรับโหมด **GUI Touchscreen Kiosk**, **Headless CLI**, และ **JSON Stream สำหรับส่งข้อมูลเข้า PLC / แขนกลคัดแยก**
+รองรับกล้องคู่ **Dual MIPI CSI (OV5647 / IMX)** บนบอร์ด Raspberry Pi 5 และ **Dual USB Webcams** บน Windows/Linux
 
 ---
 
-## 🌟 ฟีเจอร์เด่น (Key Features)
-
-- **On-Demand Inspection (Zero-Load Standby)**:
-  - **โหมด Standby**: กล้องแสดงภาพสด 30–60 FPS พร้อมกรอบเล็งตำแหน่งผล โดยไม่มีการรันโมเดล AI ตลอดเวลา (ประหยัดพลังงาน 0% AI Load)
-  - **กดตรวจวัด**: กดปุ่ม **"📸 ตรวจวัดความสุก"** หรือกด **`Spacebar` / `Enter`** ระบบจะ Freeze ภาพจากกล้อง 2 ฝั่ง รันโมเดล AI และแสดงระดับความสุกทันที
-  - **ตรวจผลถัดไป**: กด **`Spacebar` / `Enter`** อีกครั้งเพื่อรีเซ็ตกลับสู่โหมด Standby รอผลถัดไป
-- **Asynchronous Double-Buffered Camera Pipeline**: แยก Thread ดึงภาพจากกล้องทั้ง 2 ตัวออกจาก GUI Loop ทำให้ภาพพรีวิวไหลลื่น 60 FPS ไม่กระตุก
-- **Lightweight Pure PyTorch CNN**: โมเดลโครงข่ายประสาทเทียมขนาดเบา ประมวลผลบน CPU ได้เร็วพิเศษ (<12ms) พร้อมฝังโมเดลความสุกและสายพันธุ์ไว้ในตัว
-- **Edge Acceleration Support**: รองรับการ Export โมเดลเป็น **TorchScript** และ **ONNX**
-- **Ripeness Speedometer Gauge**: เกจวัดความเร็วเข็มไมล์แสดงระดับความสุกแบบไดนามิก 0–100% (*ดิบ / กึ่งสุก / สุก*)
-- **Variety Trainer Studio**: หน้าต่าง GUI สำหรับสร้าง Label สายพันธุ์ใหม่ ถ่ายภาพสะสมตัวอย่าง และเทรนโมเดลใหม่ได้บนตัวเครื่องทันที
-
----
-
-## 🛡️ ความปลอดภัยและประสิทธิภาพ (Security & Speed Optimizations)
-
-- 🔒 **Safe Model Deserialization**: บังคับใช้ `weights_only=True` ใน `torch.load()` ป้องกันช่องโหว่ Arbitrary Code Execution จากไฟล์ Checkpoint
-- 🔒 **Air-Gap & DLP Hardened**: กฎ `.gitignore` เข้มงวด ป้องกันการรั่วไหลของ Secrets, `.env*`, และ Credentials
-- ⚡ **Zero-Allocation Preprocessing**: คำนวณค่า Mean/Std ผ่าน Constant Tensors ลดภาระ Memory Allocation ในทุกเฟรม
-- ⚡ **`@torch.inference_mode()`**: ข้ามการสร้าง Autograd Tracking ทั้งหมด เพิ่มความเร็ว Inference ขึ้น 20-30%
-- ⚡ **Otsu Adaptive Segmentation**: ใช้อัลกอริทึม Gaussian Blur + Otsu Thresholding ตัดขอบผลอะโวคาโดได้แม่นยำทุกสภาพแสง
-
----
-
-## 💻 คู่มือการติดตั้งบน Windows (Windows Installation Guide)
-
-### วิธีที่ 1: ติดตั้งผ่านตัวติดตั้ง Setup Wizard (.exe) — ⭐ แนะนำที่สุด
-> **ไม่ต้องติดตั้ง Python ในเครื่อง** — ตัวติดตั้งได้ฝัง Python, PyTorch, OpenCV, GUI และโมเดลทั้งหมดไว้ในตัวแล้ว
-
-1. ดาวน์โหลดไฟล์ [**`AvocadoInspector-Setup.exe`**](https://github.com/Kuma2438/Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology/releases/tag/v1.1.0-refac5-10-69) จากหน้า Releases (หรือในโฟลเดอร์ `package/`)
-2. ดับเบิ้ลคลิกไฟล์ **`AvocadoInspector-Setup.exe`** เพื่อเริ่มติดตั้ง
-3. เลือกโฟลเดอร์ปลายทาง (ค่าเริ่มต้น: `%LOCALAPPDATA%\AvocadoInspector`)
-4. ติ๊กเลือก **"Create a Desktop shortcut"** แล้วกดปุ่ม **Install**
-5. ดับเบิ้ลคลิกไอคอน **Avocado Ripeness Inspector** บนหน้าจอ Desktop หรือ Start Menu เพื่อเปิดใช้งานได้ทันที
-
----
-
-### วิธีที่ 2: รันแบบ Portable ZIP (ไม่ต้องติดตั้ง / เสียบ Flash Drive ใช้งานได้เลย)
-1. ดาวน์โหลดไฟล์ [**`avocado-inspector-windows-x64.zip`**](https://github.com/Kuma2438/Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology/releases/tag/v1.1.0-refac5-10-69)
-2. แตกไฟล์ ZIP ออกมาไว้ในโฟลเดอร์ที่ต้องการ
-3. ดับเบิ้ลคลิกไฟล์ **`avocado-inspector.exe`** เพื่อเปิดโปรแกรมทันที
-
----
-
-### วิธีที่ 3: รันจาก Source Code (สำหรับนักพัฒนา / Developer Mode)
-หากต้องการแก้ไขโค้ดหรือเทรนโมเดลเพิ่มเติม:
-1. Clone โปรเจกต์:
-   ```powershell
-   git clone -b refac5/10/69 https://github.com/Kuma2438/Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology.git
-   cd Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology
-   ```
-2. ดับเบิ้ลคลิกไฟล์ **`run.bat`** (มีระบบ Auto-Bootstrap ตรวจหา Python, ติดตั้งผ่าน winget และสร้าง virtual environment ให้อัตโนมัติ)
-3. เลือกเมนู **`[1]`** เพื่อเปิดใช้งานโปรแกรม
-
----
-
-## 🍓 คู่มือการติดตั้งบน Linux / Raspberry Pi 5 (Linux & Pi 5 Guide)
-
-รองรับ **Raspberry Pi 5 (4GB / 8GB)** บน **Raspberry Pi OS 64-bit (Debian 12 Bookworm)** และ Ubuntu Linux 22.04 / 24.04
+## 🌟 ฟีเจอร์เด่นที่พัฒนาขึ้นใหม่ (New & Upgraded Features)
 
 ```mermaid
 flowchart TD
-    A["บอร์ด Raspberry Pi 5"] --> B{"เลือกชนิดกล้อง"}
-    B -->|"MIPI CSI Ribbon"| C["พอร์ต CAM0 / CAM1 (Picamera2)"]
-    B -->|"USB Webcams"| D["พอร์ต USB 3.0 /dev/video0, /dev/video2"]
-    C --> E["รัน sudo bash scripts/install_linux.sh"]
-    D --> E
-    E --> F["เปิดโปรแกรมผ่าน Desktop Icon หรือ avocado-inspector"]
+    Cam["📷 กล้องตรวจจับภาพ (Native RGB)"] --> Box{"ตรวจพื้นที่วางผล (Scan Box)"}
+    Box -->|"กล่องว่าง / ไม่พบวัตถุ"| Empty["❌ ไม่พบอะโวคาโด (No Avocado)\n(เข็มพักที่ --%, ไม่แสดง 0% ดิบ)"]
+    Box -->|"พบวัตถุ"| Filter{"ตัวกรองตรวจสอบผลอะโวคาโด\n(Shape + RGB/HSV Chromatic)"}
+    Filter -->|"มือ / กระดาษ / แก้ว / ผลไม้อื่น"| Reject["⚠️ ไม่ใช่อะโวคาโด (Not an Avocado)\n(เข็มพักที่ --%, ปฏิเสธการรันโมเดล)"]
+    Filter -->|"อะโวคาโดของแท้"| AI["🧠 โมเดล PyTorch CNN\n(ประเมินความสุก + สายพันธุ์)"]
+    AI --> Result["🥑 แสดงระดับความสุก (ดิบ / กึ่งสุก / สุก)\nพร้อมเกจเข็มไมล์ 5.0 - 98.0%"]
 ```
 
-### ขั้นตอนที่ 1: การเชื่อมต่อกล้อง (Camera Hardware Setup)
-- **แบบที่ 1: กล้องคู่ MIPI CSI (OV5647 5MP / IMX series)**
-  - เสียบสายแพกล้องตัวที่ 1 เข้าพอร์ต `CAM0` บนบอร์ด Raspberry Pi 5
-  - เสียบสายแพกล้องตัวที่ 2 เข้าพอร์ต `CAM1` บนบอร์ด Raspberry Pi 5
-  - ระบบจะตรวจจับและเปิดใช้งานผ่านไดรเวอร์ `Picamera2` อัตโนมัติ
-- **แบบที่ 2: กล้องคู่ Dual USB Webcams**
-  - เสียบสาย USB กล้องตัวที่ 1 เข้าช่อง USB 3.0 (`/dev/video0`)
-  - เสียบสาย USB กล้องตัวที่ 2 เข้าช่อง USB 3.0 (`/dev/video2`)
-  - ระบบจะเปิดใช้งานผ่านไดรเวอร์ `V4L2` อัตโนมัติ
+1. **Native RGB Color Pipeline (มาตรฐานสี RGB888 ตรงกันทั้งระบบ):**
+   - กล้องทุกชนิด (Picamera2, USB Video, Simulation) ดึงและส่งข้อมูลภาพในรูปแบบ **RGB888** โดยตรง
+   - ขจัดปัญหา Channel BGR/RGB สลับกัน ทำให้การวิเคราะห์เม็ดสีเขียว (Unripe) และสีน้ำตาลเข้ม/ดำ (Ripe) แม่นยำสูงสุด
+2. **ระบบตรวจจับกล่องว่าง (Empty Box Detection — ไม่ขึ้น 0% ดิบปลอม):**
+   - เมื่อไม่มีผลไม้อยู่ในกล่องสแกน ระบบจะแจ้งว่า **"❌ ไม่พบอะโวคาโด (No Avocado Detected)"**
+   - เข็มเกจวัดความสุกจะพักอยู่ที่สถานะ **`--%`** (สีเทา Neutral) โดยไม่ขึ้นตัวเลขหลอกว่า "0% ดิบ"
+3. **ระบบคัดกรองวัตถุแปลกปลอม (Non-Avocado Object Rejection Filter):**
+   - ตรวจสอบรูปทรงความโค้งมนนูน (Convexity & Solidity $\ge 0.78$)
+   - กรองสีผิวหนังและมือมนุษย์ (Human Hand / Skin Tone Filter ในระบบสี YCrCb)
+   - กรองวัตถุสีขาวจัด เช่น ถ้วยกระดาษ กล่อง หรือกระดาษ A4
+   - กรองวัตถุสีสดที่ไม่ใช่อะโวคาโด (สีแดงสด เช่น แอปเปิ้ล, สีฟ้า, สีเหลืองสด)
+   - หากตรวจพบวัตถุที่ไม่ใช่อะโวคาโด ระบบจะแจ้งเตือนทันทีว่า **"⚠️ ไม่ใช่อะโวคาโด (Not an Avocado)"** และไม่แสดงค่าความสุก
+4. **โหมดหน้าจอฮาร์ดแวร์ขนาดกะทัดรัด (85.42 mm × 55.60 mm Landscape Layout):**
+   - ออกแบบ UI แนวนอนขนาด **480 × 320 พิกเซล** รองรับหน้าจอสัมผัส LCD ขนาด 3.5" - 4.0" (ขนาดพื้นที่แสดงผล 85.42 mm กว้าง × 55.60 mm สูง)
+   - ปุ่มสัมผัสขนาดใหญ่พิเศษสูง 46–48 px สัมผัสด้วยนิ้วมือได้ง่าย ไม่ต้องใช้สไตลัส
+   - ปุ่มสลับมุมมองกล้อง `[ 📷 CAM 1 | 📷 CAM 2 ]` สำหรับตรวจสอบผลได้ทั้งสองด้านในหน้าจอเดียว
 
 ---
 
-### ขั้นตอนที่ 2: ติดตั้งระบบอัตโนมัติด้วย One-Click Script
-เปิด Terminal บน Raspberry Pi 5 หรือ Ubuntu แล้วรันคำสั่ง:
+## 📱 การแสดงผลบนจอฮาร์ดแวร์ (85.42 mm × 55.60 mm Hardware Touchscreen Guide)
 
-```bash
-# 1. Clone Source Code
-git clone -b refac5/10/69 https://github.com/Kuma2438/Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology.git
-cd Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology
+หน้าจอขนาด **85.42 mm (กว้าง) × 55.60 mm (สูง)** เป็นขนาดหน้าจอมาตรฐานแนวนอน (Landscape อัตราส่วน ~3:2) ที่นิยมใช้กับ Raspberry Pi เช่น หน้าจอ LCD HAT 3.5 นิ้ว (ความละเอียด 480 × 320):
 
-# 2. ให้สิทธิ์การรันสคริปต์
-chmod +x scripts/install_linux.sh run.sh
-
-# 3. รันสคริปต์ติดตั้งระบบ
-sudo bash scripts/install_linux.sh
+```
++--------------------------------------------------------------+
+| 🥑 Avocado Inspector          [ 📷 CAM 1 ]  [ ⛶ ]  ● STANDBY |
++-------------------------------+------------------------------+
+|                               |  🥑 ความสุก: สุก (Ripe)      |
+|                               |  🏷️ สายพันธุ์: Hass (91%)    |
+|       [ ภาพสดจากกล้อง ]       |                              |
+|       (แตะเพื่อตรวจวัด)       |       [ เกจวัดเข็มไมล์ ]     |
+|                               |            88.5%             |
++-------------------------------+------------------------------+
+|              📸 แตะเพื่อตรวจวัด (Tap to Scan)                 |
++--------------------------------------------------------------+
 ```
 
-**สิ่งที่สคริปต์จะดำเนินการให้อัตโนมัติ:**
-1. ติดตั้ง System Dependencies (`python3-tk`, `libgl1`, `libglib2.0-0`, `v4l-utils`)
-2. กำหนดสิทธิ์เข้าถึงอุปกรณ์กล้อง (`sudo usermod -a -G video $USER`)
-3. ติดตั้งโปรแกรมไปที่ `/opt/avocado-inspector` พร้อม Virtual Environment
-4. สร้างคำสั่งระบบ `/usr/local/bin/avocado-inspector`
-5. สร้างไอคอนเมนูเปิดโปรแกรมบน **Desktop และ Applications Menu**
-
----
-
-### ขั้นตอนที่ 3: วิธีเปิดใช้งานบน Linux / Raspberry Pi 5
-
-#### 🖥️ แบบที่ 1: เปิด GUI Desktop Dashboard
-- ดับเบิ้ลคลิกไอคอน **Avocado Ripeness Inspector** บน Desktop
-- หรือพิมพ์คำสั่งใน Terminal:
-  ```bash
-  avocado-inspector
-  # หรือ
-  ./run.sh 1
-  ```
-
-#### ⚙️ แบบที่ 2: รันแบบ Headless Terminal (สำหรับตู้คัดแยกอัตโนมัติ / ตู้กด)
-```bash
-python3 scripts/run_cli.py --interactive
+### การตั้งค่าเปิดโหมดกะทัดรัด 480 × 320:
+ในไฟล์ `configs/default.yaml`:
+```yaml
+display:
+  mode: "compact_landscape"    # "compact_landscape" สำหรับจอ 85.42mm x 55.60mm, หรือ "desktop" สำหรับจอคอมพิวเตอร์ทั่วไป
+  width: 480
+  height: 320
+  fullscreen: false            # ตั้งเป็น true หากต้องการให้เปิดเต็มจอ Kiosk ทันที
 ```
-*ผู้ใช้กด `Enter` เพื่อตรวจวัดผลความสุกและสายพันธุ์ทันที*
-
-#### 🤖 แบบที่ 3: สตรีมผลลัพธ์ JSON สำหรับแขนกล / PLC / Node-RED / REST API
-```bash
-python3 scripts/run_cli.py --interactive --json
-```
-
-**ตัวอย่างข้อมูล JSON Output:**
-```json
-{
-  "fruit_id": 1,
-  "ripeness": "Ripe",
-  "score": 88.5,
-  "confidence": 94.2,
-  "variety": "Hass",
-  "variety_confidence": 91.0,
-  "latency_ms": 11.4
-}
-```
+*(หากตั้งเป็น `mode: "auto"` ระบบจะตรวจจับความละเอียดหน้าจออัตโนมัติ หากความละเอียดต่ำกว่าหรือเท่ากับ 640×480 จะสลับเข้าโหมด Compact แนวนอนทันที)*
 
 ---
 
@@ -163,49 +80,93 @@ python3 scripts/run_cli.py --interactive --json
 
 | ปุ่มบนหน้าจอ | ปุ่มลัดคีย์บอร์ด | หน้าที่การทำงาน |
 | :--- | :--- | :--- |
-| **📸 ตรวจวัดความสุก** | `Spacebar` / `Enter` | Freeze ภาพกล้อง 2 ฝั่งพร้อมกัน แล้ววิเคราะห์ระดับความสุก + สายพันธุ์ |
-| **🔄 ตรวจผลถัดไป** | `Spacebar` / `Enter` | เคลียร์ผลการตรวจวัด และกลับสู่โหมด Standby เพื่อรอผลถัดไป |
+| **📸 แตะเพื่อตรวจวัด** | `Spacebar` / `Enter` | Freeze ภาพกล้อง วิเคราะห์ระดับความสุกและสายพันธุ์ทันที |
+| **🔄 ตรวจผลถัดไป** | `Spacebar` / `Enter` | รีเซ็ตผลการตรวจวัด กลับสู่โหมด Standby รอตรวจผลต่อไป |
+| **📷 CAM 1 / CAM 2** | `Tab` | สลับมุมมองภาพระหว่างกล้องตัวที่ 1 และตัวที่ 2 |
 | **⛶ สลับโหมดเต็มจอ** | `F11` / `Escape` | ขยายเต็มจอสำหรับจอสัมผัส Touchscreen Kiosk |
-| **🎓 Trainer Studio** | - | เปิดหน้าต่างสร้าง Label สายพันธุ์ใหม่ ถ่ายภาพตัวอย่าง และเทรน AI |
-| **📸 บันทึกภาพ (Snapshot)** | - | บันทึกรูปภาพผลการตรวจวัดลงในโฟลเดอร์ `snapshots/` |
+| **แตะที่ภาพกล้อง** | คลิกเมาส์ซ้าย / ทัชสกรีน | สั่งตรวจวัดภาพได้ทันทีโดยไม่ต้องเล็งปุ่มด้านล่าง |
 
 ---
 
-## ⚙️ การตั้งค่าระบบ (`configs/default.yaml`)
+## 💻 คู่มือการติดตั้งบน Windows (Windows Installation Guide)
 
-สามารถแก้ไขการตั้งค่ากล้องและเกณฑ์ตัดสินความสุกได้ที่ `configs/default.yaml`:
+### วิธีที่ 1: รันจาก Source Code / Scripts
+1. Clone โปรเจกต์ไปยังเครื่อง:
+   ```powershell
+   git clone -b AfterComment https://github.com/Kuma2438/Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology.git
+   cd Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology
+   ```
+2. ดับเบิ้ลคลิกไฟล์ **`run.bat`** (สคริปต์จะตรวจหา Python, สร้าง Virtual Environment และดาวน์โหลด Dependencies ให้อัตโนมัติ)
+3. เลือกเมนู **`[1]`** เพื่อเปิดใช้งานโปรแกรม
 
-```yaml
-camera:
-  driver: "auto"              # "auto", "picamera2" (สำหรับ Pi 5 CSI), "usb", หรือ "sim"
-  cam1_id: 0                  # พอร์ตกล้องตัวที่ 1 (/dev/video0 บน Linux, 0 บน Windows)
-  cam2_id: 1                  # พอร์ตกล้องตัวที่ 2 (/dev/video2 บน Linux, 1 บน Windows)
-  width: 640                  # ความกว้างภาพ
-  height: 480                 # ความสูงภาพ
-  fps: 30
-  auto_fallback: true         # สลับเป็นภาพจำลองอัตโนมัติหากไม่ได้ต่อกล้อง
+---
 
-models:
-  ripeness_model_path: "models/ripeness_cnn.pth"
-  variety_model_path: "models/variety_cnn.pth"
-  device: "auto"              # "cpu" สำหรับ Pi 5 หรือ "cuda" สำหรับ PC
+## 🍓 คู่มือการติดตั้งบน Linux & Raspberry Pi 5 (Linux & Pi 5 Guide)
 
-inference:
-  ripeness_weight_color: 0.35 # น้ำหนักการคำนวณจากสีผิว HSV (35%)
-  ripeness_weight_cnn: 0.65   # น้ำหนักการคำนวณจาก PyTorch CNN (65%)
-  unripe_threshold: 35.0      # เกณฑ์แบ่ง ดิบ / กึ่งสุก (< 35% คือดิบ)
-  mid_ripe_threshold: 70.0    # เกณฑ์แบ่ง กึ่งสุก / สุก (35-70% กึ่งสุก, > 70% สุก)
+```bash
+# 1. Clone Source Code
+git clone -b AfterComment https://github.com/Kuma2438/Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology.git
+cd Ripeness-Level-Detection-of-Avocado-Fruit-Using-Image-Processing-Technology
+
+# 2. ให้สิทธิ์การรันสคริปต์
+chmod +x scripts/install_linux.sh run.sh
+
+# 3. รันสคริปต์ติดตั้งระบบอัตโนมัติ
+sudo bash scripts/install_linux.sh
 ```
 
+### การเปิดโปรแกรม:
+- ดับเบิ้ลคลิกไอคอน **Avocado Ripeness Inspector** บน Desktop
+- หรือพิมพ์ใน Terminal:
+  ```bash
+  avocado-inspector
+  # หรือ
+  ./run.sh 1
+  ```
+
 ---
 
-## 🛠️ วิธีคอมไพล์ตัวติดตั้ง Standalone ใหม่ (Rebuilding Installers)
+## 🤖 โหมดเชื่อมต่อแขนกลคัดแยกและ PLC (Robotics & JSON API)
 
-หากมีการแก้ไขโค้ดและต้องการสร้างไฟล์ตัวติดตั้งใหม่:
+สำหรับสายพานคัดแยกผลไม้อัตโนมัติ สามารถรันโปรแกรมในโหมด CLI Stream ข้อมูล JSON ผ่านทาง Serial / Standard Output ได้:
 
-```powershell
-# คอมไพล์ไฟล์ Windows Setup Wizard Installer (AvocadoInspector-Setup.exe)
-python scripts/build_installer.py
+```bash
+python scripts/run_cli.py --interactive --json
+```
+
+**ตัวอย่างผลลัพธ์ JSON เมื่อตรวจวัด:**
+```json
+{
+  "status": "DETECTED",
+  "ripeness": "Ripe",
+  "score": 88.5,
+  "confidence": 92.4,
+  "variety": "Hass",
+  "variety_confidence": 91.0,
+  "latency_ms": 11.2
+}
+```
+
+**เมื่อกล่องว่าง (ไม่มีผลไม้):**
+```json
+{
+  "status": "NO_AVOCADO",
+  "ripeness": "No Avocado",
+  "score": null,
+  "confidence": 0.0,
+  "rejection_reason": "Box is empty / no object found"
+}
+```
+
+**เมื่อวางสิ่งของอื่นที่ไม่ใช่อะโวคาโด (เช่น มือ หรือ ถ้วย):**
+```json
+{
+  "status": "NOT_AVOCADO",
+  "ripeness": "Not Avocado",
+  "score": null,
+  "confidence": 0.0,
+  "rejection_reason": "Human hand/skin detected (ตรวจพบมือหรือผิวหนัง)"
+}
 ```
 
 ---
@@ -215,6 +176,16 @@ python scripts/build_installer.py
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
 ```
+
+---
+
+## 🛡️ ความปลอดภัยและประสิทธิภาพ (Security & Speed Optimizations)
+
+- 🔒 **Safe Model Deserialization**: บังคับใช้ `weights_only=True` ใน `torch.load()` ป้องกันช่องโหว่ Arbitrary Code Execution
+- 🔒 **Air-Gap & DLP Guardrails**: กฎ `.gitignore` ป้องกันข้อมูลลับ รหัสผ่าน และไฟล์น้ำหนักโมเดลขนาดใหญ่
+- ⚡ **Zero-Allocation RGB Processing**: วิเคราะห์ภาพด้วยสถาปัตยกรรม Native RGB888 ลดขั้นตอนการแปลงซ้ำซ้อน
+- ⚡ **Double-Buffered Asynchronous Capture**: แยก Thread ดึงภาพจากกล้องอิสระ ทำให้การแสดงผลสด 60 FPS ลื่นไหล
+- ⚡ **Otsu + Morphological Filtering**: อัลกอริทึมตัดขอบรูปทรงนูน (Convexity) ตรวจจับและแยกแยะวัตถุได้อย่างแม่นยำ
 
 ---
 

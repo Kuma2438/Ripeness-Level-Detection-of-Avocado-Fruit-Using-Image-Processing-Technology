@@ -16,6 +16,14 @@ def get_project_root() -> Path:
 
 
 @dataclass
+class DisplayConfig:
+    mode: str = "auto"
+    width: int = 480
+    height: int = 320
+    fullscreen: bool = False
+
+
+@dataclass
 class CameraConfig:
     driver: str = "auto"
     cam1_id: int = 0
@@ -61,6 +69,7 @@ class InferenceConfig:
 @dataclass
 class AppConfig:
     camera: CameraConfig = field(default_factory=CameraConfig)
+    display: DisplayConfig = field(default_factory=DisplayConfig)
     models: ModelConfig = field(default_factory=ModelConfig)
     dataset: DatasetConfig = field(default_factory=DatasetConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)
@@ -81,6 +90,15 @@ def load_config(config_path: Optional[Path | str] = None) -> AppConfig:
     if config_path and Path(config_path).is_file():
         with open(config_path, "r", encoding="utf-8") as f:
             data: Dict[str, Any] = yaml.safe_load(f) or {}
+
+        if "display" in data:
+            disp = data["display"]
+            cfg.display = DisplayConfig(
+                mode=disp.get("mode", "auto"),
+                width=disp.get("width", 480),
+                height=disp.get("height", 320),
+                fullscreen=disp.get("fullscreen", False),
+            )
 
         if "camera" in data:
             c = data["camera"]
